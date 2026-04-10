@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -20,7 +20,7 @@ const SORT_OPTIONS = [
   { label:'Newest',         value:'-createdAt' },
 ]
 
-export default function CollectionsPage() {
+function CollectionsContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { addItem } = useCart()
@@ -353,4 +353,8 @@ export default function CollectionsPage() {
       <WhatsAppButton/>
     </main>
   )
+}
+
+export default function CollectionsPage() {
+  return <Suspense><CollectionsContent/></Suspense>
 }
