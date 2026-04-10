@@ -60,8 +60,9 @@ export default function AdminProducts() {
   }
 
   const handleFiles = (files: FileList | null) => {
-    if (!files) return
-    setNewFiles(prev => [...prev, ...Array.from(files)])
+    if (!files || !files.length) return
+    const arr = Array.from(files)          // capture immediately — before input clears
+    setNewFiles(prev => [...prev, ...arr])
   }
 
   const removeImage = (idx: number) => {
@@ -241,7 +242,7 @@ export default function AdminProducts() {
               <p className="text-xs text-stone-300 mt-1">JPG, PNG, WEBP up to 5MB each</p>
             </div>
             <input ref={fileRef} type="file" multiple accept="image/*" className="hidden"
-                   onChange={e => { handleFiles(e.target.files); e.target.value = '' }}/>
+                   onChange={e => { const f = e.target.files; handleFiles(f); e.target.value = '' }}/>
             {/* Paste image URL */}
             <div className="flex gap-2 mt-2">
               <input
