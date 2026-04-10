@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "/Users/afsal/Downloads/ironforge 3/app/(shop)/products"
+    ],
+    "allow": [
+      "Bash(npx tsc:*)"
+    ]
+  }
+}
