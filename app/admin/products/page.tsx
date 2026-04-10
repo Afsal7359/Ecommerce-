@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { productAPI, categoryAPI, brandAPI } from '@/lib/api'
 import { Modal, Confirm, PageHeader, DataTable, Pagination, Field, StatusBadge, ImagePreview, Toggle } from '@/components/admin/AdminUI'
 import { Pencil, Trash2, Eye, Upload, Loader2, Star } from 'lucide-react'
@@ -25,7 +25,6 @@ export default function AdminProducts() {
   const [existingImgs, setExistingImgs] = useState<string[]>([])  // server URLs to keep
   const [newFiles, setNewFiles]         = useState<File[]>([])     // new files pending upload
   const [urlInput, setUrlInput]         = useState('')             // paste-a-URL input
-  const fileRef = useRef<HTMLInputElement>(null)
 
   const emptyForm = { name:'', sku:'', description:'', shortDesc:'', category:'', brand:'', price:'', comparePrice:'', costPrice:'', stock:'', lowStockAlert:'5', badge:'', isFeatured:false, isActive:true, features:'', tags:'', metaTitle:'', metaDesc:'' }
   const [form, setForm] = useState(emptyForm)
@@ -160,132 +159,140 @@ export default function AdminProducts() {
 
       {/* Product form modal */}
       <Modal open={showForm} onClose={() => setShowForm(false)} title={editProd ? 'Edit Product' : 'Add Product'} size="xl">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Product Name *">
-            <input className="input" value={form.name} onChange={e => setForm(f=>({...f,name:e.target.value}))} placeholder="Product name"/>
-          </Field>
-          <Field label="SKU">
-            <input className="input" value={form.sku} onChange={e => setForm(f=>({...f,sku:e.target.value}))} placeholder="SKU code"/>
-          </Field>
-          <Field label="Category *">
-            <select className="select" value={form.category} onChange={e => setForm(f=>({...f,category:e.target.value}))}>
-              <option value="">Select category</option>
-              {cats.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-            </select>
-          </Field>
-          <Field label="Brand *">
-            <select className="select" value={form.brand} onChange={e => setForm(f=>({...f,brand:e.target.value}))}>
-              <option value="">Select brand</option>
-              {brands.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
-            </select>
-          </Field>
-          <Field label="Price (AED) *">
-            <input type="number" className="input" value={form.price} onChange={e => setForm(f=>({...f,price:e.target.value}))} placeholder="0.00"/>
-          </Field>
-          <Field label="Compare Price (AED)">
-            <input type="number" className="input" value={form.comparePrice} onChange={e => setForm(f=>({...f,comparePrice:e.target.value}))} placeholder="0.00"/>
-          </Field>
-          <Field label="Stock">
-            <input type="number" className="input" value={form.stock} onChange={e => setForm(f=>({...f,stock:e.target.value}))} placeholder="0"/>
-          </Field>
-          <Field label="Low Stock Alert">
-            <input type="number" className="input" value={form.lowStockAlert} onChange={e => setForm(f=>({...f,lowStockAlert:e.target.value}))} placeholder="5"/>
-          </Field>
-          <div className="md:col-span-2">
-            <Field label="Short Description">
-              <input className="input" value={form.shortDesc} onChange={e => setForm(f=>({...f,shortDesc:e.target.value}))} placeholder="Short summary"/>
-            </Field>
-          </div>
-          <div className="md:col-span-2">
-            <Field label="Description *">
-              <textarea rows={4} className="input resize-none" value={form.description} onChange={e => setForm(f=>({...f,description:e.target.value}))} placeholder="Full product description"/>
-            </Field>
-          </div>
-          <div className="md:col-span-2">
-            <Field label="Key Features (one per line)">
-              <textarea rows={3} className="input resize-none" value={form.features} onChange={e => setForm(f=>({...f,features:e.target.value}))} placeholder="800W motor&#10;SDS Plus system&#10;Quick-change chuck"/>
-            </Field>
-          </div>
-          <Field label="Tags (comma separated)">
-            <input className="input" value={form.tags} onChange={e => setForm(f=>({...f,tags:e.target.value}))} placeholder="drill, bosch, power tool"/>
-          </Field>
-          <Field label="Badge">
-            <select className="select" value={form.badge} onChange={e => setForm(f=>({...f,badge:e.target.value}))}>
-              {BADGES.map(b => <option key={b} value={b}>{b || 'None'}</option>)}
-            </select>
-          </Field>
-          <Field label="SEO Title">
-            <input className="input" value={form.metaTitle} onChange={e => setForm(f=>({...f,metaTitle:e.target.value}))}/>
-          </Field>
-          <Field label="SEO Description">
-            <input className="input" value={form.metaDesc} onChange={e => setForm(f=>({...f,metaDesc:e.target.value}))}/>
-          </Field>
+        <div className="space-y-4">
 
-          <div className="md:col-span-2 flex gap-6">
-            <label className="flex items-center gap-2 cursor-pointer text-sm">
-              <input type="checkbox" checked={form.isActive as boolean} onChange={e => setForm(f=>({...f,isActive:e.target.checked}))} className="w-4 h-4 accent-brand"/>
-              Active
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer text-sm">
-              <input type="checkbox" checked={form.isFeatured as boolean} onChange={e => setForm(f=>({...f,isFeatured:e.target.checked}))} className="w-4 h-4 accent-brand"/>
-              Featured
-            </label>
-          </div>
-
-          {/* Image upload */}
-          <div className="md:col-span-2">
-            <p className="label">Images</p>
-            <div onClick={() => fileRef.current?.click()}
-                 className="border-2 border-dashed border-stone-200 rounded-xl p-6 text-center cursor-pointer hover:border-brand hover:bg-orange-50 transition-colors">
-              <Upload className="w-6 h-6 text-stone-300 mx-auto mb-2"/>
-              <p className="text-sm text-stone-400">Click to select images (max 8)</p>
-              <p className="text-xs text-stone-300 mt-1">JPG, PNG, WEBP up to 5MB each</p>
-            </div>
-            <input ref={fileRef} type="file" multiple accept="image/*" className="hidden"
-                   onChange={e => { const f = e.target.files; handleFiles(f); e.target.value = '' }}/>
-            {/* Paste image URL */}
-            <div className="flex gap-2 mt-2">
+          {/* ── Images FIRST so preview is always visible ── */}
+          <div>
+            <p className="label mb-1">Images</p>
+            {/* Label wraps the input directly — most reliable cross-browser approach */}
+            <label className="relative flex flex-col items-center justify-center border-2 border-dashed border-stone-200 rounded-xl p-6 text-center cursor-pointer hover:border-brand hover:bg-orange-50 transition-colors overflow-hidden">
+              <Upload className="w-6 h-6 text-stone-300 mb-2 pointer-events-none"/>
+              <p className="text-sm text-stone-400 pointer-events-none">Click to select images (max 8)</p>
+              <p className="text-xs text-stone-300 mt-1 pointer-events-none">JPG, PNG, WEBP up to 5MB each</p>
+              {/* opacity-0 not display:none — keeps onChange firing in all browsers */}
               <input
-                className="input text-sm flex-1"
-                value={urlInput}
+                type="file"
+                multiple
+                accept="image/*"
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                onChange={e => {
+                  const arr = Array.from(e.target.files ?? [])
+                  if (arr.length) setNewFiles(prev => [...prev, ...arr])
+                }}
+              />
+            </label>
+
+            {/* URL paste */}
+            <div className="flex gap-2 mt-2">
+              <input className="input text-sm flex-1" value={urlInput}
                 onChange={e => setUrlInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && addImageUrl()}
-                placeholder="Or paste an image URL and press Add…"
-              />
+                placeholder="Or paste an image URL and press Add…"/>
               <button type="button" onClick={addImageUrl}
-                className="px-4 py-2 bg-stone-900 text-white text-xs font-bold rounded-xl hover:bg-stone-700 transition-colors shrink-0">
-                Add
-              </button>
+                className="px-4 py-2 bg-stone-900 text-white text-xs font-bold rounded-xl hover:bg-stone-700 shrink-0">Add</button>
             </div>
+
+            {/* Previews */}
             {(existingImgs.length > 0 || newFiles.length > 0) && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {existingImgs.map((src, i) => (
                   <div key={`ex-${i}`} className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-stone-200">
                     <img src={src} alt="" className="w-full h-full object-cover"/>
                     <span className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[8px] text-center py-0.5">Saved</span>
-                    <button onClick={() => removeImage(i)}
-                            className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold leading-none">×</button>
+                    <button type="button" onClick={() => removeImage(i)}
+                      className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">×</button>
                   </div>
                 ))}
                 {newFiles.map((file, i) => (
                   <div key={`new-${i}`} className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-brand/40">
                     <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover"/>
                     <span className="absolute bottom-0 left-0 right-0 bg-brand/70 text-white text-[8px] text-center py-0.5">New</span>
-                    <button onClick={() => removeImage(existingImgs.length + i)}
-                            className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold leading-none">×</button>
+                    <button type="button" onClick={() => removeImage(existingImgs.length + i)}
+                      className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">×</button>
                   </div>
                 ))}
               </div>
             )}
           </div>
-        </div>
 
-        <div className="flex gap-3 mt-6 pt-4 border-t border-stone-100">
-          <button onClick={() => setShowForm(false)} className="btn-outline flex-1">Cancel</button>
-          <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
-            {saving && <Loader2 className="w-4 h-4 animate-spin"/>}
-            {editProd ? 'Update Product' : 'Create Product'}
-          </button>
+          {/* ── Rest of the form ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Product Name *">
+              <input className="input" value={form.name} onChange={e => setForm(f=>({...f,name:e.target.value}))} placeholder="Product name"/>
+            </Field>
+            <Field label="SKU">
+              <input className="input" value={form.sku} onChange={e => setForm(f=>({...f,sku:e.target.value}))} placeholder="SKU code"/>
+            </Field>
+            <Field label="Category *">
+              <select className="select" value={form.category} onChange={e => setForm(f=>({...f,category:e.target.value}))}>
+                <option value="">Select category</option>
+                {cats.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Brand *">
+              <select className="select" value={form.brand} onChange={e => setForm(f=>({...f,brand:e.target.value}))}>
+                <option value="">Select brand</option>
+                {brands.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Price (AED) *">
+              <input type="number" className="input" value={form.price} onChange={e => setForm(f=>({...f,price:e.target.value}))} placeholder="0.00"/>
+            </Field>
+            <Field label="Compare Price (AED)">
+              <input type="number" className="input" value={form.comparePrice} onChange={e => setForm(f=>({...f,comparePrice:e.target.value}))} placeholder="0.00"/>
+            </Field>
+            <Field label="Stock">
+              <input type="number" className="input" value={form.stock} onChange={e => setForm(f=>({...f,stock:e.target.value}))} placeholder="0"/>
+            </Field>
+            <Field label="Low Stock Alert">
+              <input type="number" className="input" value={form.lowStockAlert} onChange={e => setForm(f=>({...f,lowStockAlert:e.target.value}))} placeholder="5"/>
+            </Field>
+            <div className="md:col-span-2">
+              <Field label="Short Description">
+                <input className="input" value={form.shortDesc} onChange={e => setForm(f=>({...f,shortDesc:e.target.value}))} placeholder="Short summary"/>
+              </Field>
+            </div>
+            <div className="md:col-span-2">
+              <Field label="Description *">
+                <textarea rows={3} className="input resize-none" value={form.description} onChange={e => setForm(f=>({...f,description:e.target.value}))} placeholder="Full product description"/>
+              </Field>
+            </div>
+            <div className="md:col-span-2">
+              <Field label="Key Features (one per line)">
+                <textarea rows={3} className="input resize-none" value={form.features} onChange={e => setForm(f=>({...f,features:e.target.value}))} placeholder="800W motor&#10;SDS Plus system&#10;Quick-change chuck"/>
+              </Field>
+            </div>
+            <Field label="Tags (comma separated)">
+              <input className="input" value={form.tags} onChange={e => setForm(f=>({...f,tags:e.target.value}))} placeholder="drill, bosch, power tool"/>
+            </Field>
+            <Field label="Badge">
+              <select className="select" value={form.badge} onChange={e => setForm(f=>({...f,badge:e.target.value}))}>
+                {BADGES.map(b => <option key={b} value={b}>{b || 'None'}</option>)}
+              </select>
+            </Field>
+            <Field label="SEO Title">
+              <input className="input" value={form.metaTitle} onChange={e => setForm(f=>({...f,metaTitle:e.target.value}))}/>
+            </Field>
+            <Field label="SEO Description">
+              <input className="input" value={form.metaDesc} onChange={e => setForm(f=>({...f,metaDesc:e.target.value}))}/>
+            </Field>
+            <div className="md:col-span-2 flex gap-6">
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
+                <input type="checkbox" checked={form.isActive as boolean} onChange={e => setForm(f=>({...f,isActive:e.target.checked}))} className="w-4 h-4 accent-brand"/> Active
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
+                <input type="checkbox" checked={form.isFeatured as boolean} onChange={e => setForm(f=>({...f,isFeatured:e.target.checked}))} className="w-4 h-4 accent-brand"/> Featured
+              </label>
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4 border-t border-stone-100">
+            <button onClick={() => setShowForm(false)} className="btn-outline flex-1">Cancel</button>
+            <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
+              {saving && <Loader2 className="w-4 h-4 animate-spin"/>}
+              {editProd ? 'Update Product' : 'Create Product'}
+            </button>
+          </div>
         </div>
       </Modal>
 
